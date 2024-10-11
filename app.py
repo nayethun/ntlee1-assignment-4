@@ -3,7 +3,6 @@ from lsa_search import load_data, compute_lsa, process_query, compute_similariti
 
 app = Flask(__name__)
 
-# Load and process data at startup
 print("Loading data and computing LSA...")
 documents = load_data()
 X_lsa, vt, vectorizer = compute_lsa(documents)
