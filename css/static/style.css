@@ -1,0 +1,33 @@
+/* static/css/style.css */
+
+/* Custom Styles */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+#search-form input {
+    max-width: 100%;
+}
+
+.card-title i {
+    margin-right: 8px;
+}
+
+.card-text {
+    text-align: justify;
+}
+
+.alert {
+    margin-top: 20px;
+}
+
+footer {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}

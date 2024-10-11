@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LSA Search Engine</title>
+    <!-- Include Bootstrap CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Include custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Meta tag for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-search"></i> LSA Search Engine</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Search Form -->
+        <form id="search-form" class="input-group mb-4">
+            <input type="text" name="query" id="query" class="form-control" placeholder="Enter your query here">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results">
+            <!-- Results will be displayed here -->
+        </div>
+
+        <!-- Chart Section -->
+        <div class="my-5">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-lg-start">
+        <div class="text-center p-3">
+            &copy; 2024 Your Name. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Include Bootstrap JS and dependencies (Popper.js) from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include Chart.js for the bar chart visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Your JavaScript code -->
+    <script>
+        const form = document.getElementById('search-form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const queryInput = document.getElementById('query');
+            const query = queryInput.value.trim();
+
+            if (!query) {
+                alert('Please enter a query.');
+                return;
+            }
+
+            // Disable the input and button while processing
+            queryInput.disabled = true;
+            form.querySelector('button').disabled = true;
+
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ 'query': query }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+
+                if (data.results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="alert alert-info text-center" role="alert">No results found.</div>';
+                    // Clear the chart if no results
+                    if (window.bar != undefined) {
+                        window.bar.destroy();
+                    }
+                    return;
+                }
+
+                const labels = [];
+                const similarities = [];
+
+                data.results.forEach((result, index) => {
+                    // Create elements to display the document and similarity score
+                    const resultCard = document.createElement('div');
+                    resultCard.classList.add('card', 'mb-4');
+
+                    const cardBody = document.createElement('div');
+                    cardBody.classList.add('card-body');
+
+                    const title = document.createElement('h5');
+                    title.classList.add('card-title');
+                    title.innerHTML = `<i class="fas fa-file-alt"></i> Document ${index + 1}`;
+                    cardBody.appendChild(title);
+
+                    const similarity = document.createElement('h6');
+                    similarity.classList.add('card-subtitle', 'mb-2', 'text-muted');
+                    similarity.textContent = `Similarity Score: ${result.similarity.toFixed(4)}`;
+                    cardBody.appendChild(similarity);
+
+                    const snippet = document.createElement('p');
+                    snippet.classList.add('card-text');
+                    snippet.textContent = result.doc.substring(0, 300) + '...';  // Display first 300 characters
+                    cardBody.appendChild(snippet);
+
+                    resultCard.appendChild(cardBody);
+                    resultsDiv.appendChild(resultCard);
+
+                    labels.push('Doc ' + (index + 1));
+                    similarities.push(result.similarity);
+                });
+
+                // Update the bar chart with the new data
+                const ctx = document.getElementById('chart').getContext('2d');
+                if (window.bar != undefined) {
+                    window.bar.destroy();
+                }
+                window.bar = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Cosine Similarity',
+                            data: similarities,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1,
+                                title: {
+                                    display: true,
+                                    text: 'Similarity Score'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Documents'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            })
+            .finally(() => {
+                // Re-enable the input and button after processing
+                queryInput.disabled = false;
+                form.querySelector('button').disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
